@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive SaaS growth simulator — model MRR, ARR, CAC and churn over a 12-month projection.">
+  <title>Dashboard | SaaS Growth Simulator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --sv-primary: #1E40AF;
+      --sv-primary-muted: #3B82F6;
+      --sv-accent: #D97706;
+      --sv-destructive: #DC2626;
+      --sv-bg: #F8FAFC;
+      --sv-fg: #1E3A8A;
+      --sv-card: #FFFFFF;
+      --sv-muted: #E9EEF6;
+      --sv-muted-fg: #475569;
+      --sv-border: #DBEAFE;
+      --sv-ring: #1E40AF;
+      --sv-positive: #15803D;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.12);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Fira Sans', sans-serif;
+      background-color: var(--sv-bg);
+      color: var(--sv-fg);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.5;
+      transition: background-color 250ms ease, color 250ms ease;
+    }
+
+    /* App navigation — consistent with all other pages */
+    .appnav { position: sticky; top: 0; z-index: 50; background: var(--sv-card); border: 1px solid var(--sv-border); box-shadow: var(--shadow-md); border-radius: var(--radius); margin-bottom: 24px; }
+    .appnav-inner { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .appnav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+    .appnav-links a { color: var(--sv-muted-fg); text-decoration: none; font-weight: 600; font-size: 0.9rem; padding: 8px 12px; border-radius: 8px; transition: background 200ms ease, color 200ms ease; }
+    .appnav-links a:hover { background: var(--sv-muted); color: var(--sv-fg); }
+    .appnav-links a.active { color: var(--sv-fg); background: var(--sv-muted); }
+    .appnav-links a:focus-visible { outline: 2px solid var(--sv-ring); border-radius: 8px; }
+    @media (max-width: 768px) { .appnav-inner { flex-direction: column; align-items: flex-start; } .appnav-links { width: 100%; } }
+
+    /* Dark theme tokens — complete palette redefined, never partial */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --sv-primary: #93C5FD;
+        --sv-primary-muted: #60A5FA;
+        --sv-accent: #FBBF24;
+        --sv-destructive: #F87171;
+        --sv-bg: #0B1220;
+        --sv-fg: #E2E8F0;
+        --sv-card: #111A2E;
+        --sv-muted: #1E293B;
+        --sv-muted-fg: #94A3B8;
+        --sv-border: #1E293B;
+        --sv-ring: #60A5FA;
+        --sv-positive: #4ADE80;
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+        --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+      }
+    }
+    :root[data-theme="dark"] {
+      --sv-primary: #93C5FD;
+      --sv-primary-muted: #60A5FA;
+      --sv-accent: #FBBF24;
+      --sv-destructive: #F87171;
+      --sv-bg: #0B1220;
+      --sv-fg: #E2E8F0;
+      --sv-card: #111A2E;
+      --sv-muted: #1E293B;
+      --sv-muted-fg: #94A3B8;
+      --sv-border: #1E293B;
+      --sv-ring: #60A5FA;
+      --sv-positive: #4ADE80;
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+    }
+
+    .btn-primary:hover { opacity: 0.92; }
+
+    h1, h2, h3 {
+      font-family: 'Fira Code', monospace;
+      line-height: 1.3;
+    }
+
+    h1 { font-size: 1.6rem; margin: 0 0 4px; }
+    h2 { font-size: 1.1rem; margin: 0 0 16px; }
+    h3 { font-size: 0.85rem; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--sv-muted-fg); }
+
+    .subtitle { color: var(--sv-muted-fg); margin: 0 0 24px; font-size: 0.95rem; }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .kpi-card {
+      background: var(--sv-card);
+      border: 1px solid var(--sv-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+      transition: box-shadow 200ms ease, transform 200ms ease, background 200ms ease;
+      cursor: pointer;
+    }
+
+    .kpi-card:hover, .kpi-card:focus-visible {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+      outline: none;
+    }
+
+    .kpi-value {
+      font-family: 'Fira Code', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--sv-fg);
+    }
+
+    .kpi-delta {
+      font-size: 0.85rem;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    .kpi-delta.up   { color: var(--sv-positive); }
+    .kpi-delta.down { color: var(--sv-destructive); }
+
+    .chart-panel {
+      grid-column: span 3;
+      background: var(--sv-card);
+      border: 1px solid var(--sv-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .chart-wrap { position: relative; height: 340px; }
+    .chart-wrap canvas { max-width: 100%; }
+
+    .input-panel {
+      grid-column: span 1;
+      background: var(--sv-card);
+      border: 1px solid var(--sv-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      align-self: start;
+    }
+
+    .field { margin-bottom: 18px; }
+
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--sv-fg);
+      margin-bottom: 6px;
+    }
+
+    .field .hint { color: var(--sv-muted-fg); font-weight: 400; font-size: 0.75rem; }
+
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: 'Fira Code', monospace;
+      font-size: 1rem;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      background: var(--sv-card);
+      color: var(--sv-fg);
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    .input:focus-visible {
+      border-color: var(--sv-ring);
+      outline: 2px solid var(--sv-ring);
+      outline-offset: 1px;
+      box-shadow: 0 0 0 3px rgba(30,64,175,0.12);
+    }
+
+    input[type=range] { padding: 0; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      max-width: 1440px;
+      margin: 0 auto 24px;
+    }
+    .theme-toggle { display: inline-flex; align-items: center; gap: 8px; }
+
+    .ab-bar {
+      grid-column: span 4;
+      background: var(--sv-card);
+      border: 1px solid var(--sv-border);
+      border-radius: var(--radius);
+      padding: 16px 24px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .ab-bar .stack { display: flex; gap: 24px; flex-wrap: wrap; }
+    .ab-pill { font-size: 0.85rem; }
+    .ab-pill strong { color: var(--sv-primary); }
+
+    .button-row { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+
+    .btn-primary, .btn-secondary {
+      font-family: 'Fira Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+    }
+    .btn-primary { background: #D97706; color: #fff; border: 1px solid #D97706; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-secondary { background: transparent; color: var(--sv-primary); border: 2px solid var(--sv-primary); }
+    .btn-secondary:hover { background: rgba(30,64,175,0.06); }
+
+    .legend { margin-top: 16px; font-size: 0.85rem; color: var(--sv-muted-fg); display: flex; gap: 16px; flex-wrap: wrap; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+    .insight-panel {
+      grid-column: span 4;
+      background: var(--sv-card);
+      border: 1px solid var(--sv-border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .insight-panel p { margin: 6px 0; font-size: 0.92rem; color: var(--sv-fg); }
+    .insight-panel strong { color: var(--sv-primary); }
+
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    summary { cursor: pointer; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+      .kpi-card:hover { transform: none; }
+    }
+
+    @media (max-width: 1024px) {
+      .chart-panel { grid-column: span 2; }
+      .input-panel { grid-column: span 2; }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .dashboard { grid-template-columns: repeat(2, 1fr); }
+      .chart-panel, .input-panel, .insight-panel { grid-column: span 2; }
+      .kpi-card { grid-column: span 1; }
+      .chart-wrap { height: 260px; }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .kpi-card { grid-column: span 1; }
+      .kpi-value { font-size: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="appnav" aria-label="Primary">
+    <div class="appnav-inner">
+      <div class="appnav-links">
+        <a href="index.html">Home</a>
+        <a href="dashboard.html" class="active">Dashboard</a>
+        <a href="scenarios.html">Scenarios</a>
+        <a href="churn.html">Churn &amp; Retention</a>
+        <a href="unit-economics.html">Unit Economics</a>
+        <a href="customers.html">Customers &amp; Funnel</a>
+      </div>
+      <button type="button" class="btn-secondary theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark or light theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        Theme
+      </button>
+    </div>
+  </nav>
+
+  <header class="topbar">
+    <div>
+      <h1>SaaS Growth Simulator</h1>
+      <p class="subtitle">Model 12-month MRR, ARR, CAC and churn from a small set of assumptions.</p>
+    </div>
+  </header>
+
+  <div class="dashboard" id="dashboard" aria-label="SaaS growth dashboard">
+    <!-- KPI cards -->
+    <button class="kpi-card" type="button" data-target="mrrChart">
+      <h3>MRR (Month 12)</h3>
+      <div class="kpi-value" id="kpiMrr">$—</div>
+      <div class="kpi-delta up" id="kpiMrrDelta">—</div>
+    </button>
+    <button class="kpi-card" type="button" data-target="mrrChart">
+      <h3>ARR (Run-Rate)</h3>
+      <div class="kpi-value" id="kpiArr">$—</div>
+      <div class="kpi-delta" id="kpiArrDelta">—</div>
+    </button>
+    <button class="kpi-card" type="button" data-target="cacPanel">
+      <h3>CAC Payback (mo)</h3>
+      <div class="kpi-value" id="kpiCac">—</div>
+      <div class="kpi-delta" id="kpiCacStatus">—</div>
+    </button>
+    <button class="kpi-card" type="button" data-target="insightPanel">
+      <h3>Churn (Monthly)</h3>
+      <div class="kpi-value" id="kpiChurn">—</div>
+      <div class="kpi-delta" id="kpiChurnDelta">—</div>
+    </button>
+
+    <!-- Chart -->
+    <div class="chart-panel" id="mrrChart">
+      <h2>Revenue Projection — 12 Months</h2>
+      <div class="chart-wrap">
+        <canvas id="revenueChart" role="img" aria-label="Bar chart of monthly recurring revenue projected over 12 months"></canvas>
+      </div>
+      <div class="legend">
+        <span><i style="background:#3B82F6"></i> MRR</span>
+        <span><i style="background:#1E40AF"></i> ARR (run-rate)</span>
+        <span><i style="background:#D97706"></i> New / recovered MRR</span>
+      </div>
+    </div>
+
+    <!-- Inputs -->
+    <div class="input-panel" id="cacPanel">
+      <h2>Inputs</h2>
+      <div class="field">
+        <label for="inMrr">Starting MRR <span class="hint">$/month</span></label>
+        <input type="number" min="0" step="1000" id="inMrr" class="input" value="50000">
+      </div>
+      <div class="field">
+        <label for="inGrowth">Net Monthly Growth <span class="hint" id="growthVal">+10%</span></label>
+        <input type="range" min="-10" max="60" step="1" id="inGrowth" class="input" value="10" aria-describedby="growthHint">
+        <div class="hint" id="growthHint">New customer growth rate, stacked monthly.</div>
+      </div>
+      <div class="field">
+        <label for="inChurn">Monthly Churn <span class="hint" id="churnVal">5%</span></label>
+        <input type="range" min="0" max="30" step="0.5" id="inChurn" class="input" value="5" aria-describedby="churnHint">
+        <div class="hint" id="churnHint">% of existing MRR lost each month from cancellations.</div>
+      </div>
+      <div class="field">
+        <label for="inArpu">ARPU <span class="hint">$/customer/mo</span></label>
+        <input type="number" min="1" step="1" id="inArpu" class="input" value="100">
+      </div>
+      <div class="field">
+        <label for="inCac">CAC <span class="hint">$/customer</span></label>
+        <input type="number" min="0" step="1" id="inCac" class="input" value="150">
+      </div>
+      <div class="button-row">
+        <button type="button" class="btn-primary" id="btnSimulate">Simulate</button>
+        <button type="button" class="btn-secondary" id="btnCompare" aria-pressed="false">A/B Compare</button>
+        <button type="button" class="btn-secondary" id="btnCsv">Export CSV</button>
+        <button type="button" class="btn-secondary" id="btnReset">Reset</button>
+      </div>
+    </div>
+
+    <!-- A/B comparison -->
+    <div class="ab-bar" id="abBar">
+      <div class="stack">
+        <span class="ab-pill"><strong>Baseline (A):</strong> <span id="abA">—</span></span>
+        <span class="ab-pill"><strong>Scenario (B):</strong> <span id="abB">—</span></span>
+      </div>
+      <button type="button" class="btn-secondary" id="btnClearCompare">Clear comparison</button>
+    </div>
+
+    <!-- Insights -->
+    <div class="insight-panel" id="insightPanel">
+      <h2>Model Insights</h2>
+      <p id="insight1">Adjust the inputs and press <strong>Simulate</strong> to analyze your unit economics.</p>
+      <p id="insight2">—</p>
+      <p id="insight3">—</p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var $ = function (id) { return document.getElementById(id); };
+      var fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+      var state = {
+        months: ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],
+        mrr: [],
+        arr: [],
+        newMrr: []
+      };
+
+      var baselineA = null;   // stored first scenario for A/B
+      var scenarioB = null;   // stored second scenario for A/B
+      var chart = null;
+
+      // --- theme ---
+      function applyTheme() {
+        var root = document.documentElement;
+        var stored = null;
+        try { stored = localStorage.getItem('sgs-theme'); } catch (e) {}
+        var btn = $('themeToggle');
+        if (stored === 'light' || stored === 'dark') {
+          root.setAttribute('data-theme', stored);
+        } else {
+          root.removeAttribute('data-theme'); // follow prefers-color-scheme
+        }
+        var isDark = root.getAttribute('data-theme') === 'dark' ||
+          (!root.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (btn) btn.setAttribute('aria-pressed', String(isDark));
+        if (chart) { chart.options.scales.y.grid.color = (isDark ? '#1E293B' : '#E9EEF6'); chart.update(); }
+      }
+      $('themeToggle').addEventListener('click', function () {
+        var root = document.documentElement;
+        var current = root.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('sgs-theme', next); } catch (e) {}
+        applyTheme();
+      });
+
+      // --- simulation model ---
+      function simulate() {
+        var mr0 = Math.max(0, parseFloat($('inMrr').value) || 0);
+        var g = (parseFloat($('inGrowth').value) || 0) / 100;   // net monthly growth rate (new + recovered)
+        var churn = (parseFloat($('inChurn').value) || 0) / 100; // monthly churn on existing MRR
+        var arpu = Math.max(1, parseFloat($('inArpu').value) || 1);
+        var cac = Math.max(0, parseFloat($('inCac').value) || 0);
+
+        var customers = mr0 / arpu;
+        var mrrArr = [];
+        var arrArr = [];
+        var newArr = [];
+        var cur = mr0;
+
+        for (var m = 0; m < 12; m++) {
+          var existing = cur;                 // start of month MRR
+          var lost = existing * churn;        // churned this month
+          var gained = existing * g;          // net new MRR this month
+          cur = existing + gained - lost;     // end-of-month MRR
+          mrrArr.push(cur);
+          arrArr.push(cur * 12);              // annualized run-rate
+          newArr.push(Math.max(0, gained));
+        }
+
+        state.mrr = mrrArr;
+        state.arr = arrArr;
+        state.newMrr = newArr;
+
+        renderKpis(cur, arrArr[11], arpu, cac, churn, g, customers);
+        renderChart();
+        renderInsights(cur, arrArr, arpu, cac, churn, g, customers);
+      }
+
+      // --- KPI rendering ---
+      function renderKpis(mrr12, arr12, arpu, cac, churn, g, startCustomers) {
+        $('kpiMrr').textContent = fmt.format(mrr12);
+        $('kpiArr').textContent = fmt.format(arr12);
+
+        // MRR delta vs. starting point
+        var startMrr = parseFloat($('inMrr').value) || 0;
+        var delta = startMrr > 0 ? (mrr12 / startMrr - 1) : 0;
+        var deltaEl = $('kpiMrrDelta');
+        deltaEl.textContent = 'Δ ' + (delta >= 0 ? '+' : '') + (delta * 100).toFixed(0) + '% vs start';
+        deltaEl.className = 'kpi-delta ' + (delta >= 0 ? 'up' : 'down');
+
+        var arrDeltaEl = $('kpiArrDelta');
+        var startArr = startMrr * 12;
+        var arrDelta = startArr > 0 ? (arr12 / startArr - 1) : 0;
+        arrDeltaEl.textContent = 'Δ ' + (arrDelta >= 0 ? '+' : '') + (arrDelta * 100).toFixed(0) + '%';
+        arrDeltaEl.className = 'kpi-delta ' + (arrDelta >= 0 ? 'up' : 'down');
+
+        // CAC payback = CAC / (ARPU * gross margin assumption). Use 80% margin.
+        var grossMargin = 0.8;
+        var payback = arpu * grossMargin > 0 ? cac / (arpu * grossMargin) : Infinity;
+        $('kpiCac').textContent = isFinite(payback) ? payback.toFixed(1) : '∞';
+        var cacStatus = $('kpiCacStatus');
+        if (!isFinite(payback)) {
+          cacStatus.textContent = 'No ARPU/margin';
+        } else if (payback <= 12) {
+          cacStatus.textContent = 'Payback < 1 year ✓';
+          cacStatus.className = 'kpi-delta up';
+        } else {
+          cacStatus.textContent = 'Payback > 1 year';
+          cacStatus.className = 'kpi-delta down';
+        }
+
+        // Effective churn trend: (lost)/(avg MRR)
+        $('kpiChurn').textContent = (churn * 100).toFixed(1) + '%';
+        var churnDelta = $('kpiChurnDelta');
+        var effCustChurn = (churn * 100).toFixed(1);
+        churnDelta.textContent = effCustChurn <= 5 ? 'Healthy (≤5%)' : 'High — watch retention';
+        churnDelta.className = 'kpi-delta ' + (effCustChurn <= 5 ? 'up' : 'down');
+      }
+
+      // --- chart ---
+      function chartMode() {
+        return (baselineA && scenarioB) ? 'compare' : 'normal';
+      }
+
+      function renderChart() {
+        var ctx = $('revenueChart').getContext('2d');
+        if (chart) { chart.destroy(); }
+        var isDark = (document.documentElement.getAttribute('data-theme') === 'dark') ||
+          (!document.documentElement.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        var gridColor = isDark ? '#1E293B' : '#E9EEF6';
+
+        var datasets;
+        if (chartMode() === 'compare') {
+          datasets = [
+            {
+              label: 'Scenario A',
+              data: baselineA.mrr,
+              type: 'line',
+              borderColor: '#3B82F6',
+              backgroundColor: '#3B82F6',
+              tension: 0.3,
+              pointRadius: 3,
+              borderWidth: 2
+            },
+            {
+              label: 'Scenario B',
+              data: scenarioB.mrr,
+              type: 'line',
+              borderColor: '#D97706',
+              backgroundColor: '#D97706',
+              tension: 0.3,
+              pointRadius: 3,
+              borderWidth: 2
+            }
+          ];
+        } else {
+          datasets = [
+            {
+              label: 'MRR',
+              data: state.mrr,
+              backgroundColor: '#3B82F6',
+              borderRadius: 4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'ARR (run-rate)',
+              data: state.arr,
+              type: 'line',
+              borderColor: '#1E40AF',
+              backgroundColor: '#1E40AF',
+              tension: 0.3,
+              pointRadius: 3,
+              yAxisID: 'y'
+            },
+            {
+              label: 'New / recovered MRR',
+              data: state.newMrr,
+              backgroundColor: '#D97706',
+              borderRadius: 4,
+              yAxisID: 'y'
+            }
+          ];
+        }
+
+        chart = new Chart(ctx, {
+          type: 'bar',
+          data: { labels: state.months, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (c) { return ' ' + c.dataset.label + ': ' + fmt.format(c.parsed.y); }
+                }
+              }
+            },
+            scales: {
+              y: { grid: { color: gridColor }, ticks: { callback: function (v) { return '$' + (v >= 1000 ? (v/1000) + 'k' : v); } } }
+            }
+          }
+        });
+      }
+
+      // --- insights ---
+      function renderInsights(mrr12, arrArr, arpu, cac, churn, g, startCustomers) {
+        var startMrr = parseFloat($('inMrr').value) || 0;
+        var mult = startMrr > 0 ? (mrr12 / startMrr).toFixed(2) : '—';
+        $('insight1').innerHTML =
+          'With a <strong>' + (g*100).toFixed(0) + '%</strong> monthly growth and <strong>' +
+          (churn*100).toFixed(1) + '%</strong> churn, your MRR grows <strong>' + mult + '×</strong> over 12 months to <strong>' +
+          fmt.format(mrr12) + '</strong> (from ' + fmt.format(startMrr) + ').';
+
+        var grossMargin = 0.8;
+        var payback = arpu * grossMargin > 0 ? cac / (arpu * grossMargin) : Infinity;
+        var ltv = arpu * grossMargin / (churn || 0.01);
+        $('insight2').innerHTML =
+          'Unit economics: <strong>CAC = ' + fmt.format(cac) + '</strong>, <strong>payback = ' +
+          (isFinite(payback) ? payback.toFixed(1) + ' months' : '∞') + '</strong>. LTV (80% margin, ' +
+          (churn*100).toFixed(1) + '% churn) ≈ <strong>' + fmt.format(ltv) + '</strong>. ';
+
+        var ltvCac = ltv / (cac || 1);
+        $('insight2').innerHTML += ltvCac >= 3
+          ? '<strong>LTV:CAC = ' + ltvCac.toFixed(1) + '</strong> — healthy.'
+          : '<strong>LTV:CAC = ' + ltvCac.toFixed(1) + '</strong> — below the 3× benchmark.';
+
+        $('insight3').innerHTML = 'Retention note: at <strong>' + (churn*100).toFixed(1) + '%</strong> monthly churn, the average customer lifetime is ≈ <strong>' +
+          (churn > 0 ? (1/churn).toFixed(1) : '∞') + ' months</strong>. ' +
+          (churn > 0.05 ? 'Consider tightening onboarding / support to protect growth.' : 'Your churn is within a healthy band — focus energy on acquisition.');
+      }
+
+      // --- A/B comparison ---
+      function snapshotInputs(label) {
+        return {
+          label: label,
+          tag: 'MRR=' + ($('inMrr').value || 0) +
+               ' · G=' + (parseFloat($('inGrowth').value) || 0) + '%' +
+               ' · Churn=' + (parseFloat($('inChurn').value) || 0) + '%',
+          mrr: state.mrr.slice()
+        };
+      }
+
+      function updateAbBar() {
+        $('abA').textContent = baselineA ? baselineA.tag : 'not set';
+        $('abB').textContent = scenarioB ? scenarioB.tag : 'not set';
+        $('btnCompare').setAttribute('aria-pressed', String(!!(baselineA && scenarioB)));
+      }
+
+      $('btnCompare').addEventListener('click', function () {
+        simulate(); // ensure current inputs are computed
+        if (!baselineA) {
+          baselineA = snapshotInputs('A');
+        } else if (!scenarioB) {
+          scenarioB = snapshotInputs('B');
+        } else {
+          scenarioB = snapshotInputs('B'); // refresh scenario B with current inputs
+        }
+        updateAbBar();
+        renderChart();
+      });
+
+      $('btnClearCompare').addEventListener('click', function () {
+        baselineA = null;
+        scenarioB = null;
+        updateAbBar();
+        renderChart();
+      });
+
+      // --- CSV export ---
+      $('btnCsv').addEventListener('click', function () {
+        simulate();
+        if (chartMode() === 'compare') {
+          exportCsvCompare();
+        } else {
+          exportCsvSingle();
+        }
+      });
+
+      function downloadCsv(filename, rows) {
+        var csv = rows.map(function (r) { return r.join(','); }).join('\n');
+        var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 500);
+      }
+
+      function exportCsvSingle() {
+        var rows = [['Month', 'MRR', 'ARR (run-rate)', 'New / recovered MRR']];
+        for (var i = 0; i < state.months.length; i++) {
+          rows.push([state.months[i], state.mrr[i].toFixed(2), state.arr[i].toFixed(2), state.newMrr[i].toFixed(2)]);
+        }
+        downloadCsv('saas-projection.csv', rows);
+      }
+
+      function exportCsvCompare() {
+        var rows = [['Month', 'Scenario A MRR', 'Scenario B MRR', 'B vs A ($)', 'B vs A (%)']];
+        for (var i = 0; i < state.months.length; i++) {
+          var a = baselineA.mrr[i], b = scenarioB.mrr[i];
+          rows.push([state.months[i], a.toFixed(2), b.toFixed(2), (b - a).toFixed(2), (a !== 0 ? ((b / a - 1) * 100).toFixed(1) : '—')]);
+        }
+        downloadCsv('saas-ab-comparison.csv', rows);
+      }
+
+      // --- wiring ---
+      $('btnSimulate').addEventListener('click', simulate);
+      $('btnReset').addEventListener('click', function () {
+        $('inMrr').value = 50000;
+        $('inGrowth').value = 10;
+        $('inChurn').value = 5;
+        $('inArpu').value = 100;
+        $('inCac').value = 150;
+        syncLabels();
+        simulate();
+      });
+
+      function syncLabels() {
+        var g = parseFloat($('inGrowth').value) || 0;
+        var c = parseFloat($('inChurn').value) || 0;
+        $('growthVal').textContent = (g >= 0 ? '+' : '') + g.toFixed(0) + '%';
+        $('churnVal').textContent = c.toFixed(1) + '%';
+      }
+
+      $('inGrowth').addEventListener('input', syncLabels);
+      $('inChurn').addEventListener('input', syncLabels);
+
+      // KPI cards scroll to their section
+      document.querySelectorAll('.kpi-card').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var target = $(btn.getAttribute('data-target'));
+          if (target) { target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+        });
+      });
+
+      // initial render
+      syncLabels();
+      simulate();
+      updateAbBar();
+      applyTheme();
+    })();
+  </script>
+</body>
+</html>

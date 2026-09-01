@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Welcome to the SaaS Growth Simulator. Model, simulate, and plan your SaaS growth trajectory.">
+  <title>SaaS Growth Simulator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --sv-primary: #1E40AF;
+      --sv-primary-muted: #3B82F6;
+      --sv-accent: #D97706;
+      --sv-destructive: #DC2626;
+      --sv-bg: #F8FAFC;
+      --sv-fg: #1E3A8A;
+      --sv-card: #FFFFFF;
+      --sv-muted: #E9EEF6;
+      --sv-muted-fg: #475569;
+      --sv-border: #DBEAFE;
+      --sv-ring: #1E40AF;
+      --sv-positive: #15803D;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.12);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Fira Sans', sans-serif;
+      background-color: var(--sv-bg);
+      color: var(--sv-fg);
+      margin: 0;
+      line-height: 1.5;
+      transition: background-color 250ms ease, color 250ms ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --sv-primary: #93C5FD;
+        --sv-primary-muted: #60A5FA;
+        --sv-accent: #FBBF24;
+        --sv-destructive: #F87171;
+        --sv-bg: #0B1220;
+        --sv-fg: #E2E8F0;
+        --sv-card: #111A2E;
+        --sv-muted: #1E293B;
+        --sv-muted-fg: #94A3B8;
+        --sv-border: #1E293B;
+        --sv-ring: #60A5FA;
+        --sv-positive: #4ADE80;
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+        --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+      }
+    }
+    :root[data-theme="dark"] {
+      --sv-primary: #93C5FD;
+      --sv-primary-muted: #60A5FA;
+      --sv-accent: #FBBF24;
+      --sv-destructive: #F87171;
+      --sv-bg: #0B1220;
+      --sv-fg: #E2E8F0;
+      --sv-card: #111A2E;
+      --sv-muted: #1E293B;
+      --sv-muted-fg: #94A3B8;
+      --sv-border: #1E293B;
+      --sv-ring: #60A5FA;
+      --sv-positive: #4ADE80;
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+    }
+
+    h1, h2, h3 { font-family: 'Fira Code', monospace; line-height: 1.3; }
+
+    /* Navigation */
+    .appnav { position: sticky; top: 0; z-index: 50; background: var(--sv-card); border-bottom: 1px solid var(--sv-border); box-shadow: var(--shadow-md); }
+    .appnav-inner { max-width: 1440px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 56px; }
+    .appnav-brand { font-family: 'Fira Code', monospace; font-weight: 700; color: var(--sv-fg); text-decoration: none; font-size: 0.95rem; }
+    .appnav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .appnav-links a { color: var(--sv-muted-fg); text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transition: background 200ms ease, color 200ms ease; }
+    .appnav-links a:hover { background: var(--sv-muted); color: var(--sv-fg); }
+    .appnav-links a.active { color: var(--sv-fg); background: var(--sv-muted); }
+    @media (max-width: 768px){ .appnav-inner { flex-direction: column; height: auto; padding: 12px 16px; align-items: flex-start; } .appnav-links { width: 100%; } }
+
+    /* Page Layout */
+    .hero { text-align: center; padding: 64px 24px; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 16px; }
+    .hero p { max-width: 600px; margin: 0 auto 32px; font-size: 1.1rem; color: var(--sv-muted-fg); }
+    .btn-primary { background: #D97706; color: #fff; border: 1px solid #D97706; font-family: 'Fira Sans', sans-serif; font-size: 1rem; font-weight: 600; padding: 12px 24px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: transparent; color: var(--sv-primary); border: 2px solid var(--sv-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: background 200ms ease, color 200ms ease; }
+    .btn-secondary:hover { background: rgba(30,64,175,0.06); }
+    .btn-secondary:focus-visible { outline: 2px solid var(--sv-ring); outline-offset: 2px; }
+
+    .how-it-works { max-width: 800px; margin: 0 auto 64px; padding: 0 24px; }
+    .how-it-works h2 { font-size: 1.5rem; text-align: center; margin-bottom: 24px; }
+    .how-it-works ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .how-it-works li { background: var(--sv-muted); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; }
+
+    .content-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 0 24px 64px; max-width: 1440px; margin: 0 auto; }
+    .card { background: var(--sv-card); border: 1px solid var(--sv-border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: var(--sv-fg); transition: transform 200ms ease, box-shadow 200ms ease; cursor: pointer; }
+    .card:hover, .card:focus-visible { box-shadow: var(--shadow-lg); transform: translateY(-2px); outline: 2px solid var(--sv-ring); }
+    .card-title { font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .card-desc { color: var(--sv-muted-fg); font-size: 0.95rem; }
+
+    .footer { text-align: center; padding: 48px 24px; color: var(--sv-muted-fg); font-size: 0.9rem; border-top: 1px solid var(--sv-border); }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .card:hover { transform: none; } }
+  </style>
+</head>
+<body>
+  <nav class="appnav" aria-label="Primary">
+    <div class="appnav-inner">
+      <a class="appnav-brand" href="index.html">SaaS Growth Simulator</a>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="appnav-links">
+          <a href="index.html" class="active">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="scenarios.html">Scenarios</a>
+          <a href="churn.html">Churn &amp; Retention</a>
+          <a href="unit-economics.html">Unit Economics</a>
+          <a href="customers.html">Customers &amp; Funnel</a>
+        </div>
+        <button type="button" class="btn-secondary theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Toggle dark or light theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          Theme
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <h1>Model Your SaaS Growth</h1>
+      <p>Analyze your trajectory and test key assumptions with our interactive, data-driven simulation model.</p>
+      <a href="dashboard.html" class="btn-primary">Open the Simulator</a>
+    </section>
+
+    <section class="how-it-works">
+      <h2>Built on 5 Key Assumptions</h2>
+      <ul>
+        <li>Starting MRR</li>
+        <li>Net Monthly Growth</li>
+        <li>Monthly Churn</li>
+        <li>ARPU</li>
+        <li>CAC</li>
+      </ul>
+    </section>
+
+    <section class="content-grid" aria-label="Simulator tools">
+      <a href="dashboard.html" class="card">
+        <div class="card-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Dashboard
+        </div>
+        <div class="card-desc">The 12-month MRR, ARR, CAC and churn simulator.</div>
+      </a>
+      <a href="scenarios.html" class="card">
+        <div class="card-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Scenarios
+        </div>
+        <div class="card-desc">Save, load and compare different model presets.</div>
+      </a>
+      <a href="churn.html" class="card">
+        <div class="card-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Churn & Retention
+        </div>
+        <div class="card-desc">Retention curves, customer lifetime and LTV analysis.</div>
+      </a>
+      <a href="unit-economics.html" class="card">
+        <div class="card-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Unit Economics
+        </div>
+        <div class="card-desc">CAC payback, LTV:CAC ratios and gross margins.</div>
+      </a>
+      <a href="customers.html" class="card">
+        <div class="card-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8.25 11.5v6.5l3.5-1v-5.5L22 3z"/></svg>
+          Customers & Funnel
+        </div>
+        <div class="card-desc">Visualize the acquisition funnel to paid customers.</div>
+      </a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Built with the SaaS Growth Simulator model — assumptions drive outputs.
+  </footer>
+
+  <script>
+    (function() {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+      if (!btn) { return; }
+
+      function applyTheme() {
+        var stored = localStorage.getItem('sgs-theme');
+        if (stored === 'light' || stored === 'dark') {
+          root.setAttribute('data-theme', stored);
+        } else {
+          root.removeAttribute('data-theme');
+        }
+        var isDark = root.getAttribute('data-theme') === 'dark' ||
+          (!root.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        btn.setAttribute('aria-pressed', String(isDark));
+      }
+
+      btn.addEventListener('click', function() {
+        var current = root.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('sgs-theme', next);
+        applyTheme();
+      });
+
+      applyTheme();
+    })();
+  </script>
+</body>
+</html>

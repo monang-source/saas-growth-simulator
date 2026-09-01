@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Analyze unit economics for SaaS growth.">
+  <title>Unit Economics | SaaS Growth Simulator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+
+    :root {
+      --color-primary: #1E40AF;
+      --color-on-primary: #FFFFFF;
+      --color-secondary: #3B82F6;
+      --color-accent: #D97706;
+      --color-background: #F8FAFC;
+      --color-foreground: #1E3A8A;
+      --color-card: #FFFFFF;
+      --color-card-foreground: #1E3A8A;
+      --color-muted: #E9EEF6;
+      --color-muted-foreground: #475569;
+      --color-border: #DBEAFE;
+      --color-ring: #1E40AF;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.08);
+      --radius: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --color-background: #0B1220;
+        --color-foreground: #E2E8F0;
+        --color-card: #111A2E;
+        --color-muted: #1E293B;
+        --color-muted-foreground: #94A3B8;
+        --color-border: #1E293B;
+      }
+    }
+    :root[data-theme="dark"] {
+      --color-background: #0B1220;
+      --color-foreground: #E2E8F0;
+      --color-card: #111A2E;
+      --color-muted: #1E293B;
+      --color-muted-foreground: #94A3B8;
+      --color-border: #1E293B;
+    }
+
+    body { font-family: 'Fira Sans', sans-serif; background-color: var(--color-background); color: var(--color-foreground); margin: 0; padding: 24px; line-height: 1.5; }
+    h1, h2 { font-family: 'Fira Code', monospace; }
+
+    .appnav { background: var(--color-card); border-bottom: 1px solid var(--color-border); box-shadow: var(--shadow-md); margin-bottom: 24px; border-radius: var(--radius); }
+    .appnav-inner { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .appnav-links { display: flex; gap: 16px; flex-wrap: wrap; }
+    .appnav-links a { color: var(--color-muted-foreground); text-decoration: none; font-weight: 600; transition: color 200ms ease; padding: 8px 12px; border-radius: 8px; }
+    .appnav-links a:hover { background: var(--color-muted); color: var(--color-foreground); }
+    .appnav-links a.active { color: var(--color-foreground); background: var(--color-muted); }
+    .appnav-links a:focus-visible { outline: 2px solid var(--color-ring); border-radius: 4px; }
+
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 2px solid var(--color-primary); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: background 200ms ease, color 200ms ease; }
+    .btn-secondary:hover { background: rgba(30,64,175,0.06); }
+    .btn-secondary:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+
+    .card { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-md); }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <nav class="appnav" aria-label="Primary">
+    <div class="appnav-inner">
+      <a href="index.html" style="text-decoration: none; color: var(--color-foreground); font-family: 'Fira Code', monospace; font-weight: 700; font-size: 1.1rem;">SaaS Growth Simulator</a>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="appnav-links">
+          <a href="index.html">Home</a>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="scenarios.html">Scenarios</a>
+          <a href="churn.html">Churn & Retention</a>
+          <a href="unit-economics.html" class="active">Unit Economics</a>
+          <a href="customers.html">Customers & Funnel</a>
+        </div>
+        <button type="button" class="btn-secondary" id="themeToggle" aria-pressed="false" aria-label="Toggle dark or light theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          Theme
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <h1>Unit Economics</h1>
+  <div class="card">
+    <h2>CAC Payback & LTV:CAC Analysis</h2>
+    <p>Placeholder: Tools to analyze the efficiency of your customer acquisition spend.</p>
+  </div>
+
+  <script>
+    (function() {
+      var root = document.documentElement;
+      var btn = document.getElementById('themeToggle');
+
+      function applyTheme() {
+        var stored = localStorage.getItem('sgs-theme');
+        if (stored === 'light' || stored === 'dark') {
+          root.setAttribute('data-theme', stored);
+        } else {
+          root.removeAttribute('data-theme');
+        }
+        var isDark = root.getAttribute('data-theme') === 'dark' ||
+          (!root.hasAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        btn.setAttribute('aria-pressed', String(isDark));
+      }
+
+      btn.addEventListener('click', function() {
+        var current = root.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('sgs-theme', next);
+        applyTheme();
+      });
+
+      applyTheme();
+    })();
+  </script>
+</body>
+</html>
